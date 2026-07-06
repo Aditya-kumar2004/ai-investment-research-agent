@@ -105,11 +105,10 @@ export function Navbar() {
               key={item.id}
               onClick={() => handleNavClick(item.id, item.label)}
               suppressHydrationWarning={true}
-              className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
-                activeTab === item.id
+              className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${activeTab === item.id
                   ? "text-primary bg-card border border-border/80 shadow-[0_1px_2px_oklch(0_0_0_/_0.02)]"
                   : "text-muted-foreground hover:text-foreground hover:bg-surface/50"
-              }`}
+                }`}
             >
               {item.label}
             </button>
@@ -169,7 +168,7 @@ export function Navbar() {
               Module Synchronizing
             </DialogTitle>
           </DialogHeader>
-          
+
           <div className="py-2 text-center">
             <p className="text-sm text-muted-foreground leading-relaxed">
               The <span className="font-semibold text-foreground">{comingSoonFeature}</span> panel is currently offline for system upgrades. It will be available in the next terminal release.
