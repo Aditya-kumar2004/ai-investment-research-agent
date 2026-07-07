@@ -328,7 +328,15 @@ function OverviewCard({ report }) {
           </div>
         </div>
         <a
-          href="#"
+          href={
+            o.website
+              ? o.website.startsWith("http://") || o.website.startsWith("https://")
+                ? o.website
+                : `https://${o.website}`
+              : "#"
+          }
+          target="_blank"
+          rel="noopener noreferrer"
           className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-border bg-surface/40 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           <Globe className="h-3.5 w-3.5" /> {o.website} <ExternalLink className="h-3 w-3" />
