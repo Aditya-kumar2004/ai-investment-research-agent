@@ -10,3 +10,4 @@ Starting log...
 <!-- milestone: glassmorphic design systems active -->
 <!-- milestone: keyboard navigation validated -->
 <!-- milestone: navbar integrated -->
+<!-- milestone: links sanitized -->
