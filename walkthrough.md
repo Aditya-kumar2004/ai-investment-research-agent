@@ -11,3 +11,4 @@ Starting log...
 <!-- milestone: keyboard navigation validated -->
 <!-- milestone: navbar integrated -->
 <!-- milestone: links sanitized -->
+<!-- milestone: query sync implemented -->
