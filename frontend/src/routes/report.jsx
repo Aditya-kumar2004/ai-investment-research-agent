@@ -50,6 +50,7 @@ function ReportPage() {
   useEffect(() => {
     if (!company) return;
 
+    let active = true;
     const abortController = new AbortController();
 
     async function fetchAnalysis() {
@@ -58,8 +59,11 @@ function ReportPage() {
       setReport(null);
       try {
         const data = await analyzeCompany(company, abortController.signal);
-        setReport(data);
+        if (active) {
+          setReport(data);
+        }
       } catch (err) {
+        if (!active) return;
         // Ignore abort errors — these happen when the component unmounts (React StrictMode)
         if (err?.code === "ERR_CANCELED" || err?.message === "canceled") return;
 
@@ -72,7 +76,9 @@ function ReportPage() {
           description: apiErr.message,
         });
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     }
 
@@ -80,6 +86,7 @@ function ReportPage() {
 
     // Cancel the inflight request when the component unmounts or re-renders
     return () => {
+      active = false;
       abortController.abort();
     };
   }, [company]);
