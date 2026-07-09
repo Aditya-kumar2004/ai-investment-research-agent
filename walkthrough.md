@@ -12,3 +12,4 @@ Starting log...
 <!-- milestone: navbar integrated -->
 <!-- milestone: links sanitized -->
 <!-- milestone: query sync implemented -->
+<!-- milestone: validation schema drafted -->
