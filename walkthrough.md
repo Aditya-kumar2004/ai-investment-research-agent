@@ -14,3 +14,4 @@ Starting log...
 <!-- milestone: query sync implemented -->
 <!-- milestone: validation schema drafted -->
 <!-- milestone: backend searches integrated -->
+<!-- milestone: error fallback defined -->
