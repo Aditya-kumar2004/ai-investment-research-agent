@@ -1330,7 +1330,7 @@ function ThesisCard({ report }) {
           <p className="truncate text-xs text-muted-foreground">Generated report · Markdown</p>
         </div>
       </div>
-      <div className="prose prose-invert prose-sm max-w-none prose-headings:tracking-tight prose-h2:text-xl prose-h3:text-base prose-h3:mt-4 prose-p:text-foreground/85 prose-li:text-foreground/85 prose-strong:text-foreground prose-blockquote:border-l-primary prose-blockquote:text-foreground/80 rounded-xl border border-border/60 bg-surface/40 p-5">
+      <div className="markdown-body rounded-xl border border-border/60 bg-surface/40 p-5">
         <ReactMarkdown>{sanitizedThesis}</ReactMarkdown>
       </div>
     </Card>
