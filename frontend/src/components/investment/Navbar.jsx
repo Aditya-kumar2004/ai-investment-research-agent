@@ -104,6 +104,7 @@ export function Navbar() {
             <button
               key={item.id}
               onClick={() => handleNavClick(item.id, item.label)}
+              suppressHydrationWarning={true}
               className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
                 activeTab === item.id
                   ? "text-primary bg-card border border-border/80 shadow-[0_1px_2px_oklch(0_0_0_/_0.02)]"
@@ -194,6 +195,7 @@ function IconButton({ children, label, onClick }) {
     <button
       onClick={onClick}
       aria-label={label}
+      suppressHydrationWarning={true}
       className="grid h-9 w-9 place-items-center rounded-xl border border-border/60 bg-surface/40 text-muted-foreground transition-all hover:border-primary/30 hover:bg-surface hover:text-foreground hover:shadow-[0_2px_8px_oklch(0_0_0_/_0.02)] cursor-pointer"
     >
       {children}

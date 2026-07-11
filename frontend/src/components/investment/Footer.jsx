@@ -86,11 +86,13 @@ function NewsletterCta() {
                 placeholder="you@company.com"
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error ? "newsletter-error" : undefined}
+                suppressHydrationWarning={true}
                 className="min-w-0 flex-1 bg-transparent py-1.5 text-sm text-foreground placeholder:text-muted-foreground/60 focus:outline-none disabled:opacity-60"
               />
               <button
                 type="submit"
                 disabled={status === "loading" || status === "success"}
+                suppressHydrationWarning={true}
                 className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[image:var(--gradient-primary)] px-3.5 py-2 text-sm font-medium text-white shadow-[var(--shadow-glow)] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {status === "loading" ? (

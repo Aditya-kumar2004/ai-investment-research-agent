@@ -85,11 +85,13 @@ export function Hero({ onAnalyze, loading }) {
                 onKeyDown={handleKey}
                 disabled={loading}
                 placeholder="Enter company name... e.g. Apple, Tesla, NVIDIA, Infosys, Reliance"
+                suppressHydrationWarning={true}
                 className="min-w-0 flex-1 bg-transparent text-base text-foreground placeholder:text-muted-foreground/60 focus:outline-none disabled:opacity-50"
               />
               <button
                 onClick={() => submit()}
                 disabled={loading || !value.trim()}
+                suppressHydrationWarning={true}
                 className="group/btn inline-flex shrink-0 items-center gap-2 rounded-xl bg-[image:var(--gradient-primary)] px-4 py-2.5 text-sm font-medium text-white shadow-[var(--shadow-glow)] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {loading ? (
