@@ -96,7 +96,7 @@ function ReportPage() {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden w-full">
+    <div className="flex flex-col min-h-screen overflow-x-hidden w-full">
       <Toaster
         theme="light"
         position="top-right"
@@ -109,7 +109,7 @@ function ReportPage() {
         }}
       />
       <Navbar />
-      <main className="py-12">
+      <main className="py-8 flex-1">
         <AnimatePresence mode="wait">
           {loading && <LoadingScreen key="loading" />}
 

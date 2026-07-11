@@ -365,7 +365,7 @@ export function Footer() {
   const dialogDetails = getDialogDetails();
 
   return (
-    <footer className="relative mt-20 border-t border-border/60 overflow-hidden">
+    <footer className="relative mt-10 border-t border-border/60 overflow-hidden">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
       <div className="pointer-events-none absolute -top-24 left-1/2 h-48 w-[600px] -translate-x-1/2 rounded-full bg-primary/10 blur-[100px]" />
 
