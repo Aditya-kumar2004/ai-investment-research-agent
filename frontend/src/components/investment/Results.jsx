@@ -1474,7 +1474,12 @@ function SourcesGrid({ report }) {
       return "https://finance.yahoo.com";
     }
 
-    // 3. Corporate website: fallback to overview website field if blank
+    // 3. Alpha Vantage: redirect to the official Alpha Vantage homepage to prevent raw JSON key errors
+    if (name.includes("alpha") || name.includes("vantage") || url.includes("alphavantage")) {
+      return "https://www.alphavantage.co";
+    }
+
+    // 4. Corporate website: fallback to overview website field if blank
     if (name.includes("website") || name.includes("company") || name.includes("corporate")) {
       if (!url || url === "#" || url === "/") {
         const companyWeb = report.overview?.website || "";
@@ -1484,7 +1489,7 @@ function SourcesGrid({ report }) {
       }
     }
 
-    // 4. Missing URL fallback: Google search query
+    // 5. Missing URL fallback: Google search query
     if (!url || url === "#" || url === "/") {
       return `https://www.google.com/search?q=${encodeURIComponent((report.overview?.name || "") + " investment research")}`;
     }
