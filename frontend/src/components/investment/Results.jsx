@@ -1453,6 +1453,45 @@ function SourcesGrid({ report }) {
     return "Market information source";
   };
 
+  const getCleanUrl = (source) => {
+    const url = source.url || "";
+    const name = (source.name || "").toLowerCase();
+    const ticker = report.overview?.ticker || "";
+
+    // 1. SEC filings: redirect to guaranteed company filings query on SEC EDGAR search
+    if (name.includes("sec") || name.includes("filing") || name.includes("10-k") || name.includes("10-q")) {
+      if (ticker) {
+        return `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK=${ticker}`;
+      }
+      return "https://www.sec.gov/edgar/searchedgar/companysearch";
+    }
+
+    // 2. Yahoo Finance: redirect to live quote quote details
+    if (name.includes("yahoo") || name.includes("finance")) {
+      if (ticker) {
+        return `https://finance.yahoo.com/quote/${ticker}`;
+      }
+      return "https://finance.yahoo.com";
+    }
+
+    // 3. Corporate website: fallback to overview website field if blank
+    if (name.includes("website") || name.includes("company") || name.includes("corporate")) {
+      if (!url || url === "#" || url === "/") {
+        const companyWeb = report.overview?.website || "";
+        if (companyWeb) {
+          return companyWeb.startsWith("http") ? companyWeb : `https://${companyWeb}`;
+        }
+      }
+    }
+
+    // 4. Missing URL fallback: Google search query
+    if (!url || url === "#" || url === "/") {
+      return `https://www.google.com/search?q=${encodeURIComponent((report.overview?.name || "") + " investment research")}`;
+    }
+
+    return url;
+  };
+
   const displaySources = (report.sources || []).filter((s) => {
     const name = (s.name || "").toLowerCase();
     return (
@@ -1475,7 +1514,9 @@ function SourcesGrid({ report }) {
         {displaySources.map((s, i) => (
           <motion.a
             key={s.name}
-            href={s.url}
+            href={getCleanUrl(s)}
+            target="_blank"
+            rel="noopener noreferrer"
             initial={{ opacity: 0, y: 10 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
