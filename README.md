@@ -62,6 +62,12 @@ By utilizing advanced Large Language Models (LLMs) and strict schema validation,
      PORT=5000
      MONGO_URI=mongodb://localhost:27017/vortex-ai
      GROQ_API_KEY=your_groq_api_key_here
+
+     # Email Configurations (Optional - SMTP Welcome Emails)
+     EMAIL_HOST=smtp.gmail.com
+     EMAIL_PORT=587
+     EMAIL_USER=your_email@gmail.com
+     EMAIL_PASS=your_google_app_password
      ```
 4. Start the backend in development mode:
    ```bash
@@ -110,6 +116,13 @@ graph TD
 4. **Caching Layer Check:** The backend checks **MongoDB** to see if a report for NVIDIA already exists (with a 7-day TTL). If MongoDB is offline, it transparently checks the **In-Memory Cache**.
 5. **AI Synthesis (on Cache Miss):** The backend formats a dynamic prompt and invokes **LangChain** tied to `ChatGroq`. It binds a Zod schema (`CompanyReportSchema`) using `withStructuredOutput()` to force the LLM to output a strict, validated JSON payload.
 6. **Data Presentation:** The frontend receives the formatted JSON, handles transitions via **Framer Motion**, and plots performance data dynamically using **Recharts**.
+
+### 📧 Newsletter Subscription & Email Flow
+Vortex AI includes a fully integrated newsletter subscription system:
+1. **User Action:** The user inputs their email address in the footer box and clicks **Subscribe**.
+2. **API Request:** The frontend performs validation and fires a `POST` request to `/api/subscribe`.
+3. **Database Check & Persistence:** The backend checks if the email already exists in MongoDB (`Subscriber` schema). If not, it saves the subscriber record.
+4. **Nodemailer welcome notification:** The server asynchronously triggers a welcome transaction via **Nodemailer**, sending a clean, trustable HTML greeting mail to their inbox. If SMTP configuration is absent, it seamlessly logs the output in the server console (Sandbox Mode).
 
 ---
 
