@@ -21,9 +21,19 @@ export function SettingsModal({ isOpen, onClose }) {
   // Load configuration from localStorage when modal opens
   useEffect(() => {
     if (isOpen) {
+      // Migrate: remove any decommissioned Groq model IDs from localStorage
+      const DECOMMISSIONED_MODELS = ["llama-3.1-70b-versatile", "llama-2-70b-4096", "mixtral-8x7b-32768"];
+      const savedModel = localStorage.getItem("groq_model") || "llama-3.3-70b-versatile";
+      const validModel = DECOMMISSIONED_MODELS.includes(savedModel)
+        ? "llama-3.3-70b-versatile"
+        : savedModel;
+      if (DECOMMISSIONED_MODELS.includes(savedModel)) {
+        localStorage.setItem("groq_model", "llama-3.3-70b-versatile");
+      }
+
       setGroqApiKey(localStorage.getItem("groq_api_key") || "");
       setTavilyApiKey(localStorage.getItem("tavily_api_key") || "");
-      setModel(localStorage.getItem("groq_model") || "llama-3.3-70b-versatile");
+      setModel(validModel);
       setTemperature(parseFloat(localStorage.getItem("groq_temperature") || "0.2"));
     }
   }, [isOpen]);
@@ -117,7 +127,7 @@ export function SettingsModal({ isOpen, onClose }) {
                   Llama 3.3 70B (Versatile)
                 </SelectItem>
                 <SelectItem value="llama-3.1-8b-instant" className="cursor-pointer">
-                  Llama 3.1 8B (Instant)
+                  Llama 3.3 8B (Instant)
                 </SelectItem>
               </SelectContent>
             </Select>

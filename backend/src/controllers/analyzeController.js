@@ -11,9 +11,16 @@ export async function analyzeCompanyController(req, res, next) {
       company,
       apiKey,
       tavilyApiKey,
-      model = "llama-3.3-70b-versatile",
+      model: requestedModel = "llama-3.3-70b-versatile",
       temperature = 0.2,
     } = req.body;
+
+    // Guard: replace any decommissioned Groq models with current default
+    const DECOMMISSIONED = ["llama-3.1-70b-versatile", "llama-2-70b-4096", "mixtral-8x7b-32768"];
+    const model = DECOMMISSIONED.includes(requestedModel) ? "llama-3.3-70b-versatile" : requestedModel;
+    if (DECOMMISSIONED.includes(requestedModel)) {
+      console.warn(`[Controller] Decommissioned model "${requestedModel}" requested — switching to llama-3.3-70b-versatile`);
+    }
 
     const normalizedCompany = company.trim();
 
