@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, transformWithOxc } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -18,6 +18,17 @@ export default defineConfig(({ command }) => ({
         generatedRouteTree: "routeTree.gen.js",
       },
     }),
+    {
+      name: "strip-ts-types-from-route-tree",
+      async transform(code, id) {
+        if (id.replace(/\\/g, "/").endsWith("src/routeTree.gen.js")) {
+          return transformWithOxc(code, id, {
+            lang: "ts",
+          });
+        }
+        return null;
+      },
+    },
     react(),
     command === "build" ? nitro() : null,
   ].filter(Boolean),
