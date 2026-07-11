@@ -69,11 +69,13 @@ api.interceptors.response.use(
 );
 export async function analyzeCompany(company) {
   const apiKey = localStorage.getItem("groq_api_key");
+  const tavilyApiKey = localStorage.getItem("tavily_api_key");
   const model = localStorage.getItem("groq_model");
   const temperature = localStorage.getItem("groq_temperature");
 
   const payload = { company };
   if (apiKey) payload.apiKey = apiKey;
+  if (tavilyApiKey) payload.tavilyApiKey = tavilyApiKey;
   if (model) payload.model = model;
   if (temperature !== null && temperature !== undefined) {
     payload.temperature = parseFloat(temperature);

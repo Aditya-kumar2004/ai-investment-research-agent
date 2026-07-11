@@ -11,6 +11,7 @@ const analyzeSchema = z.object({
     required_error: "Company name is required",
   }).trim().min(1, "Company name cannot be empty"),
   apiKey: z.string().trim().optional(),
+  tavilyApiKey: z.string().trim().optional(),
   model: z.string().trim().optional(),
   temperature: z.number().min(0).max(1).optional(),
 });

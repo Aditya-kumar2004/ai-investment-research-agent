@@ -1,7 +1,7 @@
 import { ChatGroq } from "@langchain/groq";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { z } from "zod";
-import { retrieveCompanyResearch } from "./yahooFinanceService.js";
+import { searchWithTavily } from "./tavilyService.js";
 
 // Helper to pre-process and sanitize numeric fields that the LLM may accidentally output as formatted strings
 const robustNumber = z.union([
@@ -149,10 +149,10 @@ const CompanyReportSchema = z.object({
 
 /**
  * Generate a comprehensive investment report using LangChain & Groq LLM.
- * Passes Zod schema to enforce structured outputs.
+ * Uses Tavily for real-time web search data. Never reads from cache.
  */
-export async function generateInvestmentReport({ company, apiKey, model, temperature }) {
-  // Use user-provided API key from settings payload first, falling back to server environment variable
+export async function generateInvestmentReport({ company, apiKey, tavilyApiKey, model, temperature }) {
+  // Use user-provided Groq API key first, fall back to server environment variable
   const activeApiKey = apiKey || process.env.GROQ_API_KEY;
 
   if (!activeApiKey) {
@@ -161,49 +161,47 @@ export async function generateInvestmentReport({ company, apiKey, model, tempera
     );
   }
 
-  // 1. Fetch real-world research data first
-  let researchData = {};
+  // 1. Fetch real-time research data via Tavily web search
+  let researchContext = "";
   try {
-    researchData = await retrieveCompanyResearch(company);
+    const tavilyData = await searchWithTavily(company, tavilyApiKey);
+    if (tavilyData) {
+      researchContext = `
+## REAL-TIME WEB RESEARCH DATA (fetched live from the web for: "${company}")
+
+${tavilyData}
+
+## INSTRUCTIONS FOR REPORT GENERATION:
+1. Use the real-time web research data above as your PRIMARY source for all analysis.
+2. Extract the latest stock price, revenue, profits, CEO, employee count, analyst ratings, news, and all other facts directly from the data provided above.
+3. For the 'news' array, use the real article headlines and summaries from the search results above, assigning accurate sentiment (positive/neutral/negative) based on the content.
+4. For any financial metrics NOT found in the above data (e.g., historical revenue years, SWOT analysis), use your accurate pretrained knowledge.
+5. Do NOT hallucinate or invent financial data. If a metric is truly unavailable, note it explicitly.
+6. Today's date is ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} — ensure all analysis reflects the most current available information.
+`;
+    } else {
+      researchContext = `
+No live web research data was available for "${company}" (Tavily API key not configured or search failed).
+Please proceed using your most recent pretrained knowledge, but explicitly note that live research data could not be retrieved.
+Today's date is ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}.
+`;
+    }
   } catch (err) {
-    console.error(`[LangChain] Research lookup failed for "${company}":`, err.message);
+    console.error(`[LangChain] Tavily research lookup failed for "${company}":`, err.message);
+    researchContext = `Live web research failed. Please proceed using your pretrained knowledge.`;
   }
 
-  // 2. Build structured context block
-  const researchContext = researchData.ticker ? `
-REAL-WORLD RETRIEVED MARKET DATA FOR THE TARGET COMPANY:
-- Ticker: ${researchData.ticker}
-- Resolved Company Name: ${researchData.name}
-- Sector: ${researchData.sector}
-- Industry: ${researchData.industry}
-- Current Market Price: ${researchData.currentPrice ? `${researchData.currentPrice} ${researchData.currency}` : "N/A"}
-- Exchange: ${researchData.exchange}
-- 52-Week Range: ${researchData.fiftyTwoWeekLow && researchData.fiftyTwoWeekHigh ? `${researchData.fiftyTwoWeekLow} - ${researchData.fiftyTwoWeekHigh}` : "N/A"}
-- Regular Trading Volume: ${researchData.volume || "N/A"}
-- Real Stock Price History (Last 12 Months): ${JSON.stringify(researchData.stockHistory || [])}
-- Recent News Headlines & Stories: ${JSON.stringify(researchData.news || [])}
-
-DIRECTIONS FOR REPORT GENERATION:
-1. Base your investment recommendation (BUY, SELL, or HOLD), analysis, and final verdict primarily on the real-world data and news headlines provided above.
-2. For the 'stock' array, output the exact monthly price history provided above: ${JSON.stringify(researchData.stockHistory || [])}.
-3. For the 'news' array, analyze and map the sentiment for the recent headlines provided above: ${JSON.stringify(researchData.news || [])}.
-4. Since live database query stats for CEO, employee count, headquarters location, website, historical financial metrics (revenue, profit, PE ratio, ROE, operating margin), and competitor list were not available in the live feed, you should fill those fields using your accurate pretrained knowledge about this company.
-5. If certain financial metrics or facts are completely unknown or unavailable (e.g. for very small/obscure companies), explicitly mention that rather than inventing values. Do not hallucinate financial information.
-` : `
-No live market data was available for this company. Please proceed using your pretrained knowledge, but explicitly state that live research data could not be retrieved.
-`;
-
-  // 3. Initialize LangChain ChatGroq model
+  // 2. Initialize LangChain ChatGroq model
   const chatModel = new ChatGroq({
     apiKey: activeApiKey,
     modelName: model,
     temperature: temperature,
   });
 
-  // 4. Wrap LLM to enforce Zod structured output (auto-forces JSON Mode & parses results)
+  // 3. Wrap LLM to enforce Zod structured output (auto-forces JSON Mode & parses results)
   const structuredLlm = chatModel.withStructuredOutput(CompanyReportSchema);
 
-  // 5. Define the LLM Prompt Template
+  // 4. Define the LLM Prompt Template
   const prompt = ChatPromptTemplate.fromMessages([
     [
       "system",
@@ -211,6 +209,7 @@ No live market data was available for this company. Please proceed using your pr
 Your task is to analyze the requested company and generate a comprehensive, data-driven investment research report.
 Your output must strictly adhere to the requested schema structure.
 For the requested company:
+- Use the real-time web research data provided as the PRIMARY source of truth for all facts.
 - Fetch realistic or highly plausible financial metrics, competitor names, revenue, margins, ROE, etc.
 - Make competitor analysis entries comparative (include the target company as the first entry).
 - Formulate a clear verdict (BUY, SELL, or HOLD) with confidence percentages.
@@ -221,10 +220,10 @@ For the requested company:
     ["human", "Perform a comprehensive investment analysis on the following company: {company}\n\nLive Research Context:\n{context}"],
   ]);
 
-  // 6. Create and execute the Runnable Chain
+  // 5. Create and execute the Runnable Chain
   const chain = prompt.pipe(structuredLlm);
 
-  console.log(`[LangChain] Sending analysis request for "${company}" to Groq API with live context...`);
+  console.log(`[LangChain] Sending real-time analysis request for "${company}" to Groq API...`);
   
   // Call Groq API and automatically parse the structured JSON response
   const reportData = await chain.invoke({ company, context: researchContext });

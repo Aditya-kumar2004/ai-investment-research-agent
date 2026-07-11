@@ -13,21 +13,24 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export function SettingsModal({ isOpen, onClose }) {
-  const [apiKey, setApiKey] = useState("");
+  const [groqApiKey, setGroqApiKey] = useState("");
+  const [tavilyApiKey, setTavilyApiKey] = useState("");
   const [model, setModel] = useState("llama-3.3-70b-versatile");
   const [temperature, setTemperature] = useState(0.2);
 
   // Load configuration from localStorage when modal opens
   useEffect(() => {
     if (isOpen) {
-      setApiKey(localStorage.getItem("groq_api_key") || "");
+      setGroqApiKey(localStorage.getItem("groq_api_key") || "");
+      setTavilyApiKey(localStorage.getItem("tavily_api_key") || "");
       setModel(localStorage.getItem("groq_model") || "llama-3.3-70b-versatile");
       setTemperature(parseFloat(localStorage.getItem("groq_temperature") || "0.2"));
     }
   }, [isOpen]);
 
   const handleSave = () => {
-    localStorage.setItem("groq_api_key", apiKey.trim());
+    localStorage.setItem("groq_api_key", groqApiKey.trim());
+    localStorage.setItem("tavily_api_key", tavilyApiKey.trim());
     localStorage.setItem("groq_model", model);
     localStorage.setItem("groq_temperature", temperature.toString());
 
@@ -50,17 +53,53 @@ export function SettingsModal({ isOpen, onClose }) {
           {/* Groq API Key */}
           <div className="space-y-2">
             <label className="text-sm font-semibold tracking-tight text-foreground/90">
-              API Connection Key
+              Groq API Key
             </label>
             <Input
               type="password"
-              placeholder="Enter your API Key ..."
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="gsk_... (Enter your Groq API Key)"
+              value={groqApiKey}
+              onChange={(e) => setGroqApiKey(e.target.value)}
               className="font-mono bg-surface/50 border-border/60 focus-visible:ring-primary/50 text-foreground"
             />
             <p className="text-[11px] text-muted-foreground">
-              Configure your developer API key for direct engine connections.
+              Powers the AI language model (LLM). Leave blank to use the server default key.{" "}
+              <a
+                href="https://console.groq.com/keys"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline underline-offset-2 hover:opacity-80"
+              >
+                Get a free key →
+              </a>
+            </p>
+          </div>
+
+          {/* Tavily API Key */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold tracking-tight text-foreground/90">
+              Tavily Search Key{" "}
+              <span className="text-[10px] font-normal bg-primary/10 text-primary px-1.5 py-0.5 rounded-full ml-1">
+                Real-time Search
+              </span>
+            </label>
+            <Input
+              type="password"
+              placeholder="tvly-... (Enter your Tavily API Key)"
+              value={tavilyApiKey}
+              onChange={(e) => setTavilyApiKey(e.target.value)}
+              className="font-mono bg-surface/50 border-border/60 focus-visible:ring-primary/50 text-foreground"
+            />
+            <p className="text-[11px] text-muted-foreground">
+              Powers live web search for real-time news & financial data.{" "}
+              <a
+                href="https://app.tavily.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline underline-offset-2 hover:opacity-80"
+              >
+                Get a free key →
+              </a>
             </p>
           </div>
 
