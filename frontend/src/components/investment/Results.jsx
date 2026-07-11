@@ -180,7 +180,7 @@ function Card({ children, className = "" }) {
   return (
     <motion.div
       {...fade}
-      className={`glass-strong relative overflow-hidden rounded-2xl p-6 shadow-[var(--shadow-elevated)] ${className}`}
+      className={`glass-strong relative overflow-hidden rounded-2xl p-4 sm:p-6 shadow-[var(--shadow-elevated)] ${className}`}
     >
       {children}
     </motion.div>
@@ -348,7 +348,7 @@ function PremiumDecisionCard({ report }) {
         <div className="hidden h-16 w-px bg-border/40 md:block" />
 
         {/* Right Side: Key Decision Stats */}
-        <div className="grid grid-cols-3 gap-4 shrink-0 sm:gap-6 md:w-[320px]">
+        <div className="grid grid-cols-3 gap-2 shrink-0 sm:gap-6 md:w-[320px]">
           {/* Confidence */}
           <div className="rounded-xl border border-border/60 bg-surface/30 p-3 text-center">
             <div className="text-[9px] uppercase tracking-widest text-muted-foreground">Confidence</div>

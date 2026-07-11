@@ -144,7 +144,7 @@ export function Navbar() {
           </IconButton>
 
           {/* User Profile Info Pill */}
-          <div className="flex items-center gap-2 rounded-full border border-border/60 bg-surface/40 p-1 pl-3 hover:bg-surface/70 transition-all cursor-pointer">
+          <div className="flex items-center gap-2 rounded-full border border-border/60 bg-surface/40 p-1 sm:pl-3 hover:bg-surface/70 transition-all cursor-pointer">
             <span className="hidden sm:block text-xs font-semibold text-foreground/90 tracking-tight pr-1">
               A. Analyst
             </span>

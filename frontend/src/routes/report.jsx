@@ -96,7 +96,7 @@ function ReportPage() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden w-full">
       <Toaster
         theme="light"
         position="top-right"
