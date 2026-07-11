@@ -3,35 +3,35 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { z } from "zod";
 import { searchWithTavily } from "./tavilyService.js";
 
-// Helper to pre-process and sanitize numeric fields that the LLM may accidentally output as formatted strings
+// Helper to sanitize numeric fields — converts strings, nulls, and large integers
 const robustNumber = z.union([
   z.number(),
-  z.string()
+  z.string(),
+  z.null(),
 ]).transform((val) => {
-  if (typeof val === "number") return val;
-  
-  // Remove formatting: $, commas, % signs, spaces
+  if (val === null || val === undefined) return 0;
+  if (typeof val === "number") {
+    // Scale down large raw integers to billions
+    if (Math.abs(val) >= 1_000_000) return parseFloat((val / 1_000_000_000).toFixed(3));
+    return val;
+  }
   let clean = val.replace(/[$,%\s]/g, "");
-  
-  // Convert 'B' or 'b' suffixes (e.g., 394.3B -> 394.3)
-  if (clean.toLowerCase().endsWith("b")) {
-    clean = clean.slice(0, -1);
-  }
-  
-  // Convert 'M' or 'm' suffixes to billions (e.g., 500M -> 0.5)
-  if (clean.toLowerCase().endsWith("m")) {
-    return parseFloat(clean.slice(0, -1)) / 1000;
-  }
-  
+  if (clean.toLowerCase().endsWith("b")) clean = clean.slice(0, -1);
+  if (clean.toLowerCase().endsWith("m")) return parseFloat(clean.slice(0, -1)) / 1000;
   let num = parseFloat(clean);
-  
-  // If the parsed number is a full representation (e.g. 124E9 or 124000000000), 
-  // scale it down to billions if it is clearly in the millions/billions range.
-  if (num >= 1000000) {
-    num = num / 1000000000;
-  }
-  
+  if (num >= 1_000_000) num = num / 1_000_000_000;
   return isNaN(num) ? 0 : num;
+});
+
+// Helper to sanitize string fields — converts null/numbers to safe strings
+const robustString = z.union([
+  z.string(),
+  z.number(),
+  z.null(),
+]).transform((val) => {
+  if (val === null || val === undefined) return "N/A";
+  if (typeof val === "number") return String(val);
+  return val;
 });
 
 // Zod Schema representing the exact investment report model expected by the frontend
@@ -41,11 +41,11 @@ const CompanyReportSchema = z.object({
     ticker: z.string().describe("Stock ticker symbol"),
     sector: z.string().describe("Industry sector"),
     industry: z.string().describe("Specific industry name"),
-    marketCap: z.string().describe("Current market capitalization (e.g., $3.42T)"),
+    marketCap: robustString.describe("Current market capitalization (e.g., $3.42T)"),
     headquarters: z.string().describe("Headquarters location"),
-    founded: z.string().describe("Founding year"),
+    founded: robustString.describe("Founding year"),
     ceo: z.string().describe("Current CEO"),
-    employees: z.string().describe("Total number of employees (e.g., 164,000)"),
+    employees: robustString.describe("Total number of employees (e.g., 164,000)"),
     website: z.string().describe("Company website URL (e.g. www.apple.com)"),
     summary: z.string().describe("Concise executive summary of the company"),
     logo: z.string().describe("A single character representing the logo (usually first letter of name)"),
@@ -65,8 +65,8 @@ const CompanyReportSchema = z.object({
   metrics: z.array(
     z.object({
       label: z.string().describe("Metric label (e.g., Revenue, Net Profit, EPS, P/E Ratio, ROE, Op. Margin)"),
-      value: z.string().describe("Current value (e.g., $394.3B, 31.2, 156.1%)"),
-      delta: z.string().describe("Change comparison (e.g., +8.2%, -1.2%)"),
+      value: robustString.describe("Current value (e.g., $394.3B, 31.2, 156.1%)"),
+      delta: robustString.describe("Change comparison (e.g., +8.2%, -1.2%)"),
       positive: z.boolean().describe("Whether the change is positive/favorable"),
     })
   ).describe("Key financial and valuation metrics"),
@@ -123,16 +123,16 @@ const CompanyReportSchema = z.object({
     hold: robustNumber.describe("Number of analysts recommending HOLD"),
     sell: robustNumber.describe("Number of analysts recommending SELL"),
     consensus: z.string().describe("Consensus rating (e.g., Strong Buy, Moderate Buy, Hold)"),
-    priceTarget: z.string().describe("Average price target (e.g., $258.40)"),
+    priceTarget: robustString.describe("Average price target (e.g., $258.40)"),
   }),
   competitors: z.array(
     z.object({
       name: z.string().describe("Competitor name"),
-      revenue: z.string().describe("Annual revenue (e.g., $245B)"),
-      growth: z.string().describe("Revenue growth rate (e.g., 15.7%)"),
-      marketCap: z.string().describe("Market Cap (e.g., $3.1T)"),
-      pe: z.string().describe("P/E ratio (e.g., 35.8)"),
-      margins: z.string().describe("Operating margin (e.g., 42.0%)"),
+      revenue: robustString.describe("Annual revenue (e.g., $245B)"),
+      growth: robustString.describe("Revenue growth rate (e.g., 15.7%)"),
+      marketCap: robustString.describe("Market Cap (e.g., $3.1T)"),
+      pe: robustString.describe("P/E ratio (e.g., 35.8)"),
+      margins: robustString.describe("Operating margin (e.g., 42.0%)"),
     })
   ).describe("Comparison metrics with top 4 competitors, and the company itself as the first entry"),
   pros: z.array(z.string()).describe("List of top 4-5 investment pros (reasons to buy)"),
