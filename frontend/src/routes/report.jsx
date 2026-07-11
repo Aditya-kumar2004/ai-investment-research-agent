@@ -50,39 +50,37 @@ function ReportPage() {
   useEffect(() => {
     if (!company) return;
 
-    let isCurrent = true;
+    const abortController = new AbortController();
 
     async function fetchAnalysis() {
       setLoading(true);
       setError(null);
       setReport(null);
       try {
-        const data = await analyzeCompany(company);
-        if (isCurrent) {
-          setReport(data);
-        }
+        const data = await analyzeCompany(company, abortController.signal);
+        setReport(data);
       } catch (err) {
-        if (isCurrent) {
-          const apiErr =
-            err && typeof err === "object" && "message" in err && "retryable" in err
-              ? err
-              : normalizeError(err);
-          setError(apiErr);
-          toast.error("Analysis failed", {
-            description: apiErr.message,
-          });
-        }
+        // Ignore abort errors — these happen when the component unmounts (React StrictMode)
+        if (err?.code === "ERR_CANCELED" || err?.message === "canceled") return;
+
+        const apiErr =
+          err && typeof err === "object" && "message" in err && "retryable" in err
+            ? err
+            : normalizeError(err);
+        setError(apiErr);
+        toast.error("Analysis failed", {
+          description: apiErr.message,
+        });
       } finally {
-        if (isCurrent) {
-          setLoading(false);
-        }
+        setLoading(false);
       }
     }
 
     fetchAnalysis();
 
+    // Cancel the inflight request when the component unmounts or re-renders
     return () => {
-      isCurrent = false;
+      abortController.abort();
     };
   }, [company]);
 

@@ -3,7 +3,7 @@ import { toast } from "sonner";
 const api = axios.create({
   baseURL: "/api",
   headers: { "Content-Type": "application/json" },
-  timeout: 20000,
+  timeout: 120000, // 2 minutes — Tavily search + Groq LLM can take 15-30s
 });
 function normalizeError(err) {
   if (axios.isAxiosError(err)) {
@@ -12,7 +12,7 @@ function normalizeError(err) {
     const serverMsg = ax.response?.data?.message;
     if (ax.code === "ECONNABORTED") {
       return {
-        message: "The request took too long to complete. Please try again.",
+        message: "Analysis is taking longer than expected. This is normal for real-time searches — please try again.",
         code: ax.code,
         retryable: true,
       };
@@ -26,7 +26,7 @@ function normalizeError(err) {
     }
     if (status === 429) {
       return {
-        message: "Too many requests right now. Please wait a moment and retry.",
+        message: serverMsg || "⚠️ Rate limit reached. Please wait 30 seconds and try again, or switch to Llama 3.1 8B (Instant) model in Settings for higher limits.",
         status,
         retryable: true,
       };
@@ -67,7 +67,7 @@ api.interceptors.response.use(
     return Promise.reject(norm);
   },
 );
-export async function analyzeCompany(company) {
+export async function analyzeCompany(company, signal) {
   const apiKey = localStorage.getItem("groq_api_key");
   const tavilyApiKey = localStorage.getItem("tavily_api_key");
   const model = localStorage.getItem("groq_model");
@@ -81,7 +81,7 @@ export async function analyzeCompany(company) {
     payload.temperature = parseFloat(temperature);
   }
 
-  const { data } = await api.post("/analyze", payload);
+  const { data } = await api.post("/analyze", payload, { signal });
   return data;
 }
 export async function getAnalysis(company) {

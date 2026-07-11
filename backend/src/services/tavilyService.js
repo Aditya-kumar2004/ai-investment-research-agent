@@ -18,9 +18,8 @@ export async function searchWithTavily(company, tavilyApiKey) {
 
   // Run 3 targeted searches in parallel for speed
   const queries = [
-    `${company} stock price latest financial results revenue profit 2024 2025`,
-    `${company} latest news analyst rating price target forecast`,
-    `${company} company overview CEO employees sector market capitalization`,
+    `${company} latest stock price financial results revenue profit analyst rating 2025`,
+    `${company} latest news CEO market cap industry overview`,
   ];
 
   console.log(`[Tavily] Running ${queries.length} real-time searches for "${company}"...`);
@@ -48,22 +47,23 @@ export async function searchWithTavily(company, tavilyApiKey) {
 
   const results = await Promise.all(searchPromises);
 
-  // Consolidate all results into a single rich context string
+  // Consolidate results into a concise context (trim to stay within LLM token limits)
   const sections = [];
 
   results.forEach((result, idx) => {
     if (!result) return;
 
-    // Include AI answer summary if available
+    // Include AI summary (trimmed to 600 chars)
     if (result.answer) {
-      sections.push(`### Web Search ${idx + 1} — AI Summary:\n${result.answer}`);
+      sections.push(`### Web Search ${idx + 1} Summary:\n${result.answer.slice(0, 600)}`);
     }
 
-    // Include top articles
-    const articles = (result.results || []).slice(0, 4);
+    // Include top 3 articles with content trimmed to 400 chars each
+    const articles = (result.results || []).slice(0, 3);
     articles.forEach((article) => {
+      const content = (article.content || "").slice(0, 400);
       sections.push(
-        `**Source:** ${article.url || "N/A"}\n**Title:** ${article.title || "N/A"}\n**Content:** ${article.content || "N/A"}`
+        `**Source:** ${article.url || "N/A"}\n**Title:** ${article.title || "N/A"}\n**Content:** ${content}`
       );
     });
   });
