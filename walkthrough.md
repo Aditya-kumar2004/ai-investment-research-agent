@@ -15,3 +15,4 @@ Starting log...
 <!-- milestone: validation schema drafted -->
 <!-- milestone: backend searches integrated -->
 <!-- milestone: error fallback defined -->
+<!-- milestone: glassmorphic design systems active -->
