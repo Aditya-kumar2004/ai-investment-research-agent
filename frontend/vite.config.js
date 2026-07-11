@@ -1,4 +1,4 @@
-import { defineConfig, transformWithOxc } from "vite";
+import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
@@ -20,11 +20,17 @@ export default defineConfig(({ command }) => ({
     }),
     {
       name: "strip-ts-types-from-route-tree",
-      async transform(code, id) {
+      transform(code, id) {
         if (id.replace(/\\/g, "/").endsWith("src/routeTree.gen.js")) {
-          return transformWithOxc(code, id, {
-            lang: "ts",
-          });
+          // Use zero-dependency regex to strip out the 'import type' line
+          const cleanCode = code.replace(
+            /import\s+type\s+\{\s*getRouter\s*\}\s+from\s+['"].*?['"]/g,
+            ""
+          );
+          return {
+            code: cleanCode,
+            map: null,
+          };
         }
         return null;
       },
