@@ -15,6 +15,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import React from "react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -49,16 +50,104 @@ import {
   XCircle,
   Zap,
 } from "lucide-react";
-import React, { useState } from "react";
+
 const fade = {
   initial: { opacity: 0, y: 20 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-60px" },
   transition: { duration: 0.5 },
 };
+
+function ReportSubNavbar() {
+  const [activeSection, setActiveSection] = React.useState("report-overview");
+
+  const sections = [
+    { id: "report-overview", label: "Overview" },
+    { id: "report-workflow", label: "Workflow" },
+    { id: "report-financials", label: "Financials" },
+    { id: "report-swot", label: "SWOT" },
+    { id: "report-news", label: "News" },
+    { id: "report-competitors", label: "Competitors" },
+    { id: "report-thesis", label: "Thesis" },
+    { id: "report-risk", label: "Risk" },
+  ];
+
+  React.useEffect(() => {
+    const observerOptions = {
+      root: null,
+      rootMargin: "-140px 0px -45% 0px",
+      threshold: 0.1,
+    };
+
+    const handleIntersect = (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setActiveSection(entry.target.id);
+        }
+      });
+    };
+
+    const observer = new IntersectionObserver(handleIntersect, observerOptions);
+
+    sections.forEach((sec) => {
+      const el = document.getElementById(sec.id);
+      if (el) observer.observe(el);
+    });
+
+    return () => {
+      sections.forEach((sec) => {
+        const el = document.getElementById(sec.id);
+        if (el) observer.unobserve(el);
+      });
+    };
+  }, []);
+
+  const handleScroll = (id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      const offset = 145; // Height of main navbar + sub-navbar + spacing
+      const bodyRect = document.body.getBoundingClientRect().top;
+      const elementRect = el.getBoundingClientRect().top;
+      const elementPosition = elementRect - bodyRect;
+      const offsetPosition = elementPosition - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+
+      setActiveSection(id);
+    }
+  };
+
+  return (
+    <div className="sticky top-[83px] z-45 -mx-4 px-4 bg-background/80 border-b border-b-border/30 backdrop-blur-md py-2.5 sm:-mx-6 sm:px-6 md:-mx-8 md:px-8">
+      <div className="mx-auto max-w-7xl flex items-center gap-1.5 overflow-x-auto scrollbar-thin pb-1.5 sm:pb-0 select-none">
+        {sections.map((sec) => {
+          const isActive = activeSection === sec.id;
+          return (
+            <button
+              key={sec.id}
+              onClick={() => handleScroll(sec.id)}
+              suppressHydrationWarning={true}
+              className={`shrink-0 rounded-full px-4 py-1 text-xs font-semibold tracking-tight transition-all cursor-pointer ${
+                isActive
+                  ? "bg-primary text-white shadow-sm shadow-primary/20 scale-[1.02]"
+                  : "text-muted-foreground hover:text-foreground hover:bg-surface/50"
+              }`}
+            >
+              {sec.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function Results({ report, onReset }) {
-  const [isComingSoonOpen, setComingSoonOpen] = useState(false);
-  const [comingSoonFeature, setComingSoonFeature] = useState("");
+  const [isComingSoonOpen, setComingSoonOpen] = React.useState(false);
+  const [comingSoonFeature, setComingSoonFeature] = React.useState("");
 
   const handleActionClick = (featureName) => {
     setComingSoonFeature(featureName);
@@ -67,35 +156,52 @@ export function Results({ report, onReset }) {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 px-4 pb-24 sm:px-6">
+      <ReportSubNavbar />
       <ActionBar onReset={onReset} onActionClick={handleActionClick} />
 
       <PremiumDecisionCard report={report} />
 
-      <ResearchWorkflowTimeline report={report} />
+      <div id="report-workflow">
+        <ResearchWorkflowTimeline report={report} />
+      </div>
 
       <InvestmentReasoningCards report={report} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <OverviewCard report={report} />
-          <FinancialMetrics report={report} />
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <RevenueChartCard report={report} />
-            <ProfitChartCard report={report} />
+          <div id="report-overview">
+              <OverviewCard report={report} />
+            </div>
+            <div id="report-financials" className="space-y-6">
+              <FinancialMetrics report={report} />
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <RevenueChartCard report={report} />
+                <ProfitChartCard report={report} />
+              </div>
+              <StockChartCard report={report} />
+              <FinancialHealth report={report} />
+            </div>
+            <div id="report-swot">
+              <SwotGrid report={report} />
+            </div>
+            <div id="report-news">
+              <NewsTimeline report={report} />
+            </div>
+            <div id="report-competitors">
+              <CompetitorTable report={report} />
+            </div>
+            <ProsConsGrid report={report} />
+          <div id="report-thesis">
+            <ThesisCard report={report} />
           </div>
-          <StockChartCard report={report} />
-          <FinancialHealth report={report} />
-          <SwotGrid report={report} />
-          <NewsTimeline report={report} />
-          <CompetitorTable report={report} />
-          <ProsConsGrid report={report} />
-          <ThesisCard report={report} />
           <SourcesGrid report={report} />
         </div>
 
         <div className="space-y-6">
           <ScoreGauge report={report} />
-          <RiskCard report={report} />
+          <div id="report-risk">
+            <RiskCard report={report} />
+          </div>
           <SentimentDonut report={report} />
           <AnalystCard report={report} />
         </div>
