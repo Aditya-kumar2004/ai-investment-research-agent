@@ -104,51 +104,62 @@ export function Hero({ onAnalyze, loading }) {
     if (e.key === "Enter") submit();
   };
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden border-b border-border/20">
+      {/* Financial Graph Grid Pattern Overlay */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[linear-gradient(to_right,oklch(0.55_0.2_275)_1px,transparent_1px),linear-gradient(to_bottom,oklch(0.55_0.2_275)_1px,transparent_1px)] bg-[size:32px_32px]" />
+      
       <div
         className="pointer-events-none absolute inset-0"
         style={{ background: "var(--gradient-hero)" }}
       />
+      
+      {/* Glowing Accents */}
+      <div className="pointer-events-none absolute left-1/4 top-10 h-72 w-72 rounded-full bg-primary/10 blur-[100px]" />
+      <div className="pointer-events-none absolute right-1/4 bottom-10 h-72 w-72 rounded-full bg-secondary/15 blur-[120px]" />
       <div className="pointer-events-none absolute left-1/2 top-20 h-96 w-96 -translate-x-1/2 rounded-full bg-primary/20 blur-[120px]" />
 
-      <div className="relative mx-auto max-w-5xl px-4 pb-16 pt-16 sm:px-6 sm:pt-24">
+      <div className="relative mx-auto max-w-5xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24">
+        {/* Floating Tag */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full border border-border bg-surface/60 px-4 py-1.5 text-xs text-muted-foreground backdrop-blur"
+          className="mx-auto mb-6 flex w-fit items-center gap-2 rounded-full border border-border/80 bg-surface/80 px-4 py-1.5 text-xs text-muted-foreground backdrop-blur shadow-sm"
         >
           <TrendingUp className="h-3.5 w-3.5 text-primary" />
           Deep research across global financial databases & market indicators
         </motion.div>
 
+        {/* Hero Title */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.05 }}
-          className="text-center text-4xl font-bold leading-[1.05] tracking-tight sm:text-6xl md:text-7xl"
+          className="text-center text-4xl font-extrabold leading-[1.05] tracking-tight sm:text-6xl md:text-7.5xl"
         >
           <span className="text-gradient">Vortex Investment</span>
           <br />
           <span className="text-foreground">Research Terminal</span>
         </motion.h1>
 
+        {/* Subtitle Description */}
         <motion.p
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1 }}
-          className="mx-auto mt-6 max-w-2xl text-center text-base text-muted-foreground sm:text-lg"
+          className="mx-auto mt-6 max-w-2xl text-center text-base text-muted-foreground sm:text-lg leading-relaxed"
         >
           Analyze any company using quantitative financial reasoning, news intelligence, and institutional-grade investment insights.
         </motion.p>
 
+        {/* Search Panel Container */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.15 }}
           className="mx-auto mt-10 max-w-2xl"
         >
-          <div className="flex gap-2 rounded-2xl border border-border bg-surface/80 p-2 shadow-lg backdrop-blur focus-within:border-primary/50 transition-colors">
+          <div className="flex gap-2 rounded-2xl border border-border/90 bg-surface/90 p-2 shadow-xl backdrop-blur-md focus-within:border-primary/50 transition-all focus-within:shadow-primary/5">
             <div className="flex flex-1 items-center gap-2 px-3">
               <Search className="h-5 w-5 text-muted-foreground" />
               <input
@@ -158,13 +169,13 @@ export function Hero({ onAnalyze, loading }) {
                 onChange={(e) => setValue(e.target.value)}
                 onKeyDown={handleKey}
                 disabled={loading}
-                className="w-full bg-transparent py-2 text-foreground placeholder-muted-foreground outline-none disabled:opacity-50"
+                className="w-full bg-transparent py-2 text-foreground placeholder-muted-foreground outline-none disabled:opacity-50 text-sm sm:text-base"
               />
             </div>
             <button
               onClick={() => submit()}
               disabled={loading || !value.trim()}
-              className="flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md hover:bg-primary/90 disabled:opacity-50 disabled:pointer-events-none transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-md hover:bg-primary/95 disabled:opacity-50 disabled:pointer-events-none transition-all cursor-pointer transform active:scale-[0.98]"
             >
               {loading ? (
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
@@ -175,15 +186,28 @@ export function Hero({ onAnalyze, loading }) {
               )}
             </button>
           </div>
+
+          {/* Live Terminal Stats Indicator */}
+          <div className="mt-4 flex items-center justify-center gap-6 text-[10px] font-mono text-muted-foreground/80">
+            <div className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span>GATEWAY: CONNECTED</span>
+            </div>
+            <div className="h-3 w-px bg-border/60" />
+            <div>MODELS: GEMINI-1.5-PRO</div>
+            <div className="h-3 w-px bg-border/60" />
+            <div>CACHE STATUS: 5M TTL</div>
+          </div>
         </motion.div>
 
+        {/* Recent Searches */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.35 }}
-          className="mx-auto mt-8 max-w-3xl"
+          className="mx-auto mt-10 max-w-3xl"
         >
-          <div className="mb-3 flex items-center justify-center gap-2 text-xs uppercase tracking-widest text-muted-foreground">
+          <div className="mb-3 flex items-center justify-center gap-2 text-xs uppercase tracking-widest text-muted-foreground/70 font-semibold">
             <Clock className="h-3 w-3" /> Recent Searches
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2">
@@ -197,7 +221,7 @@ export function Hero({ onAnalyze, loading }) {
                   setValue(c);
                   submit(c);
                 }}
-                className="glass rounded-xl px-4 py-2.5 text-sm text-foreground/90 transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-foreground flex items-center gap-2 cursor-pointer"
+                className="glass rounded-xl px-4 py-2.5 text-sm text-foreground/90 transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-foreground flex items-center gap-2 cursor-pointer shadow-sm"
               >
                 {COMPANY_LOGOS[c]}
                 <span>{c}</span>
@@ -206,13 +230,14 @@ export function Hero({ onAnalyze, loading }) {
           </div>
         </motion.div>
 
+        {/* Popular Companies */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, delay: 0.5 }}
           className="mx-auto mt-8 max-w-4xl"
         >
-          <div className="mb-3 text-center text-xs uppercase tracking-widest text-muted-foreground">
+          <div className="mb-3 text-center text-xs uppercase tracking-widest text-muted-foreground/70 font-semibold">
             Popular Companies
           </div>
           <div className="flex flex-wrap items-center justify-center gap-2">
@@ -226,12 +251,39 @@ export function Hero({ onAnalyze, loading }) {
                   setValue(c);
                   submit(c);
                 }}
-                className="rounded-full border border-border bg-surface/40 px-3.5 py-1.5 text-xs text-muted-foreground transition-all hover:border-primary/40 hover:bg-primary/10 hover:text-foreground flex items-center gap-1.5 cursor-pointer"
+                className="rounded-full border border-border bg-surface/60 px-3.5 py-1.5 text-xs text-muted-foreground/90 transition-all hover:border-primary/40 hover:bg-primary/5 hover:text-foreground flex items-center gap-1.5 cursor-pointer shadow-sm"
               >
-                {COMPANY_LOGOS[c]}
+                {COMPANY_LOGOS[c] || <span className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50" />}
                 <span>{c}</span>
               </motion.button>
             ))}
+          </div>
+        </motion.div>
+
+        {/* Unique Feature Highlights */}
+        <motion.div
+          initial={{ opacity: 0, y: 35 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.65 }}
+          className="mx-auto mt-16 grid max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3"
+        >
+          <div className="rounded-2xl border border-border/80 bg-card/40 p-5 shadow-sm backdrop-blur transition-all hover:border-primary/30 hover:shadow-md">
+            <div className="mb-3 text-xs font-bold uppercase tracking-widest text-primary">Quantitative metrics</div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Pulls raw balance sheet figures, enterprise multiples, dividends, and beta directly from active stock market indices.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border/80 bg-card/40 p-5 shadow-sm backdrop-blur transition-all hover:border-primary/30 hover:shadow-md">
+            <div className="mb-3 text-xs font-bold uppercase tracking-widest text-primary">Sentiment analysis</div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Extracts news headlines and weighs positive, neutral, or negative narrative streams to calculate score dynamics.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-border/80 bg-card/40 p-5 shadow-sm backdrop-blur transition-all hover:border-primary/30 hover:shadow-md">
+            <div className="mb-3 text-xs font-bold uppercase tracking-widest text-primary">Cognitive reasoning</div>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Engages advanced neural models to compute SWOT matrices, risk probabilities, and final recommendation vectors.
+            </p>
           </div>
         </motion.div>
       </div>
