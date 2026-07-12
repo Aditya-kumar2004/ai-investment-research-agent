@@ -17,9 +17,10 @@ export async function searchWithTavily(company, tavilyApiKey) {
   }
 
   // Run 3 targeted searches in parallel for speed
+  const currentYear = new Date().getFullYear();
   const queries = [
-    `${company} latest stock price financial results revenue profit analyst rating 2025`,
-    `${company} latest news CEO market cap industry overview`,
+    `${company} latest stock price financial results revenue profit analyst rating ${currentYear}`,
+    `${company} latest news CEO market cap industry overview ${currentYear}`,
   ];
 
   console.log(`[Tavily] Running ${queries.length} real-time searches for "${company}"...`);

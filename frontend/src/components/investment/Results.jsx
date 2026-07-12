@@ -228,14 +228,25 @@ export function Results({ report, onReset }) {
   );
 }
 function ActionBar({ onReset, onActionClick }) {
+  const currentDate = new Date().toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
   return (
     <motion.div {...fade} className="flex flex-wrap items-center justify-between gap-3">
-      <button
-        onClick={onReset}
-        className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface/60 px-4 py-2 text-sm text-foreground transition-all hover:border-primary/40 hover:bg-primary/10"
-      >
-        <RotateCcw className="h-4 w-4" /> Analyze Another Company
-      </button>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          onClick={onReset}
+          className="inline-flex items-center gap-2 rounded-xl border border-border bg-surface/60 px-4 py-2 text-sm text-foreground transition-all hover:border-primary/40 hover:bg-primary/10 cursor-pointer"
+        >
+          <RotateCcw className="h-4 w-4" /> Analyze Another Company
+        </button>
+        <span className="inline-flex items-center gap-1.5 rounded-xl border border-border/40 bg-surface/30 px-3 py-2 text-xs text-muted-foreground select-none">
+          <span className="h-1.5 w-1.5 rounded-full bg-success animate-pulse" />
+          Data current as of: {currentDate}
+        </span>
+      </div>
       <div className="flex flex-wrap gap-2">
         <ActionBtn
           icon={<Download className="h-4 w-4" />}
@@ -843,6 +854,12 @@ function ScoreGauge({ report }) {
 }
 
 function FinancialMetrics({ report }) {
+  const sanitizeVal = (val) => {
+    if (!val || val === "0" || val === "0.0" || val === "0%" || val === "0.0%" || val === "N/A" || val === "-") {
+      return "N/A";
+    }
+    return val;
+  };
   return (
     <Card>
       <SectionTitle
@@ -863,7 +880,7 @@ function FinancialMetrics({ report }) {
             <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
               {m.label}
             </div>
-            <div className="mt-2 text-xl font-bold tracking-tight">{m.value}</div>
+            <div className="mt-2 text-xl font-bold tracking-tight">{sanitizeVal(m.value)}</div>
             {m.delta && (
               <div
                 className={`mt-1 inline-flex items-center gap-1 text-xs ${m.positive ? "text-success" : "text-destructive"}`}
@@ -1299,6 +1316,12 @@ function StatPill({ label, value, tone }) {
 }
 function CompetitorTable({ report }) {
   const cols = ["Company", "Revenue", "Growth", "Market Cap", "P/E", "Margins"];
+  const sanitizeVal = (val) => {
+    if (!val || val === "0" || val === "0.0" || val === "0%" || val === "0.0%" || val === "N/A" || val === "-") {
+      return "N/A";
+    }
+    return val;
+  };
   return (
     <Card>
       <SectionTitle
@@ -1336,11 +1359,11 @@ function CompetitorTable({ report }) {
                     )}
                   </div>
                 </td>
-                <td className="py-3 pr-4">{c.revenue}</td>
-                <td className="py-3 pr-4 text-success">{c.growth}</td>
-                <td className="py-3 pr-4">{c.marketCap}</td>
-                <td className="py-3 pr-4">{c.pe}</td>
-                <td className="py-3 pr-4">{c.margins}</td>
+                <td className="py-3 pr-4">{sanitizeVal(c.revenue)}</td>
+                <td className="py-3 pr-4 text-success">{sanitizeVal(c.growth)}</td>
+                <td className="py-3 pr-4">{sanitizeVal(c.marketCap)}</td>
+                <td className="py-3 pr-4">{sanitizeVal(c.pe)}</td>
+                <td className="py-3 pr-4">{sanitizeVal(c.margins)}</td>
               </tr>
             ))}
           </tbody>

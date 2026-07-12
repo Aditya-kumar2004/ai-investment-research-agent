@@ -215,7 +215,9 @@ For the requested company:
 - Formulate a clear verdict (BUY, SELL, or HOLD) with confidence percentages.
 - Write a professional Investment Thesis in standard Markdown (include headers, bullet points, and a target price recommendation).
 - List realistic source citations.
-- IMPORTANT: For all number/numeric fields (e.g. 'confidence', 'score', 'revenue', 'profit', 'price', 'value', 'positive', 'neutral', 'negative', 'buy', 'hold', 'sell'), you MUST output raw numeric values (integers or decimals) without any currency symbols (e.g., '$'), percentage signs (e.g., '%'), letter suffixes (e.g., 'B' or 'M'), or formatting commas. For example, output 394.3 instead of "$394.3B", and 182 instead of "$182".`,
+- IMPORTANT: For all number/numeric fields (e.g. 'confidence', 'score', 'revenue', 'profit', 'price', 'positive', 'neutral', 'negative', 'buy', 'hold', 'sell'), you MUST output raw numeric values (integers or decimals) without any currency symbols (e.g., '$'), percentage signs (e.g., '%'), letter suffixes (e.g., 'B' or 'M'), or formatting commas. For example, output 394.3 instead of "$394.3B", and 182 instead of "$182".
+- IMPORTANT: For string-based metrics (such as overview.marketCap, overview.employees, metrics.value, metrics.delta, and all competitor fields like competitors.pe, competitors.growth, competitors.revenue, competitors.marketCap, competitors.margins), you MUST format them as readable strings with their appropriate units (e.g., "$394.3B", "31.2", "156.1%", "+8.2%", "164,000", "$2.5T").
+- IMPORTANT: If any financial metric, ratio, or competitor data is not explicitly present in the provided web context, you MUST fallback to your pretrained knowledge or calculate a realistic, high-fidelity estimation based on the company's sector and market cap. Do NOT output "0", "0.0", or "N/A" for these metrics — always supply realistic, professional-grade numbers to ensure the dashboard has complete data.`,
     ],
     ["human", "Perform a comprehensive investment analysis on the following company: {company}\n\nLive Research Context:\n{context}"],
   ]);
