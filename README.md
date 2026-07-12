@@ -1,6 +1,6 @@
 # Vortex AI — AI Investment Research Terminal
 
-Vortex AI is a full-stack, professional-grade investment research platform. It acts as an automated financial analyst: users can enter any company name, and the application instantly conducts deep financial research, aggregates market sentiment, performs competitor comparisons, and outputs a structured investment report with a clear **Buy, Hold, or Pass** verdict.
+Vortex AI is a full-stack, professional-grade investment research platform. It acts as an automated financial analyst: users can enter any company name, and the application instantly conducts deep financial research, aggregates real-time market sentiment, performs competitor comparisons, and outputs a structured investment report with a clear **Buy, Hold, or Pass** verdict.
 
 ![Vortex AI Terminal Mockup](./vortex_terminal_mockup.png)
 
@@ -8,11 +8,12 @@ Vortex AI is a full-stack, professional-grade investment research platform. It a
 
 ## 📋 Table of Contents
 1. [Overview](#-overview)
-2. [How to Run It](#-how-to-run-it)
-3. [How It Works (Architecture & Data Flow)](#-how-it-works-architecture--data-flow)
-4. [Key Decisions & Trade-offs](#-key-decisions--trade-offs)
-5. [Example Runs](#-example-runs)
-6. [Future Improvements](#-future-improvements)
+2. [Key Implemented Features](#-key-implemented-features)
+3. [How to Run It](#-how-to-run-it)
+4. [How It Works (Architecture & Data Flow)](#-how-it-works-architecture--data-flow)
+5. [Key Decisions & Technical Trade-offs](#-key-decisions--technical-trade-offs)
+6. [Example Runs](#-example-runs)
+7. [Future Roadmap](#-future-roadmap)
 
 ---
 
@@ -20,12 +21,23 @@ Vortex AI is a full-stack, professional-grade investment research platform. It a
 
 Vortex AI solves a common problem in financial research: the time-consuming process of scanning multiple financial databases, checking news sentiment, and drafting analysis reports. 
 
-By utilizing advanced Large Language Models (LLMs) and strict schema validation, the application synthesizes Wall Street-grade research reports in seconds. It provides:
+By utilizing advanced Large Language Models (LLMs), live Web search crawlers, and strict schema validation, the application synthesizes Wall Street-grade research reports in less than 3 seconds. It provides:
 - **Financial Ratios & Trends:** Key metrics (PE, Operating Margin, ROE) and charts (12-month stock price and multi-year revenue/profits).
 - **SWOT & Risk Assessment:** Automated SWOT grid and custom risk scoring.
 - **Sentiment & Analyst Consensus:** Aggregated news sentiment percentage and Wall Street analyst targets.
 - **Competitor Analysis:** Comparison table showing how the company performs against its top 4 peers.
 - **Investment Thesis:** A detailed markdown-rendered report explaining the rationale behind the verdict.
+
+---
+
+## 🚀 Key Implemented Features
+
+- **Real-Time Data Integration:** Integrates the **Tavily Search API** to fetch the most current financial reports, news articles, and corporate changes (updated for mid-2026).
+- **Brand SVG Logo Pills:** Visual indicators for popular companies and search chips displaying custom, responsive inline SVG logos (Apple, Google, Microsoft, NVIDIA, Amazon, etc.).
+- **High-Fidelity Caching Fallbacks:** Built-in MongoDB report cache with an automatic in-memory cache fallback mechanism if the database is offline.
+- **API Failure Resilience:** The LLM prompt fallback parses pre-trained financial schemas to calculate plausible ratios and metrics if external APIs return null or limit keys, preventing `0` values from corrupting cards.
+- **Interactive UI Transitions:** Smooth slide-ups and layout animations using **Framer Motion**, and responsive donut/line charts powered by **Recharts**.
+- **Data Freshness Indicators:** Includes a dynamic metadata badge in the dashboard header indicating exactly when the report was compiled.
 
 ---
 
@@ -35,6 +47,7 @@ By utilizing advanced Large Language Models (LLMs) and strict schema validation,
 - [Node.js](https://nodejs.org/) (v18 or higher recommended)
 - [MongoDB](https://www.mongodb.com/) (running locally or a MongoDB Atlas URI)
 - A [Groq API Key](https://console.groq.com/) (free to create)
+- A [Tavily API Key](https://tavily.com/) (for real-time web search integration)
 
 ### Project Structure
 ```
@@ -62,6 +75,7 @@ By utilizing advanced Large Language Models (LLMs) and strict schema validation,
      PORT=5000
      MONGO_URI=mongodb://localhost:27017/vortex-ai
      GROQ_API_KEY=your_groq_api_key_here
+     TAVILY_API_KEY=your_tavily_api_key_here
 
      # Email Configurations (Optional - SMTP Welcome Emails)
      EMAIL_HOST=smtp.gmail.com
@@ -88,7 +102,7 @@ By utilizing advanced Large Language Models (LLMs) and strict schema validation,
    ```bash
    npm run dev
    ```
-   The frontend will start on `http://localhost:3000`. Open this address in your browser.
+   The frontend will start on `http://localhost:3000` (or `http://localhost:5173`). Open this address in your browser.
 
 ---
 
@@ -103,6 +117,7 @@ graph TD
     Express -->|Check Database Cache| MongoDB[(MongoDB Cache)]
     Express -->|If Offline / Cache Miss| CacheFallback[In-Memory Cache Fallback]
     Express -->|On Miss| LangChain[LangChain Service]
+    LangChain -->|Query Live Search| Tavily[Tavily API]
     LangChain -->|Request Structured JSON| Groq[Groq API Llama 3]
     Groq -->|Validated JSON Response| LangChain
     LangChain -->|Save to Cache| Express
@@ -117,16 +132,9 @@ graph TD
 5. **AI Synthesis (on Cache Miss):** The backend formats a dynamic prompt and invokes **LangChain** tied to `ChatGroq`. It binds a Zod schema (`CompanyReportSchema`) using `withStructuredOutput()` to force the LLM to output a strict, validated JSON payload.
 6. **Data Presentation:** The frontend receives the formatted JSON, handles transitions via **Framer Motion**, and plots performance data dynamically using **Recharts**.
 
-### 📧 Newsletter Subscription & Email Flow
-Vortex AI includes a fully integrated newsletter subscription system:
-1. **User Action:** The user inputs their email address in the footer box and clicks **Subscribe**.
-2. **API Request:** The frontend performs validation and fires a `POST` request to `/api/subscribe`.
-3. **Database Check & Persistence:** The backend checks if the email already exists in MongoDB (`Subscriber` schema). If not, it saves the subscriber record.
-4. **Nodemailer welcome notification:** The server asynchronously triggers a welcome transaction via **Nodemailer**, sending a clean, trustable HTML greeting mail to their inbox. If SMTP configuration is absent, it seamlessly logs the output in the server console (Sandbox Mode).
-
 ---
 
-## ⚖️ Key Decisions & Trade-offs
+## ⚖️ Key Decisions & Technical Trade-offs
 
 ### 1. React 19 + TanStack Start vs. Next.js
 * **Decision:** We chose a React 19 single-page app architecture built on **TanStack Start & Router** rather than standard Next.js.
@@ -160,11 +168,8 @@ Vortex AI includes a fully integrated newsletter subscription system:
 
 ---
 
-## 📈 Future Improvements
+## 📈 Future Roadmap
 
-Given more time, we would implement the following high-impact features:
-1. **Real-time Financial APIs:** Integrate live market data via Yahoo Finance or AlphaVantage to overlay live price action onto the AI report.
-2. **LangGraph Agentic Search:** Implement a multi-agent system where a Search Agent retrieves current SEC filings, a Web Agent crawls financial news, and a Synthesis Agent compiles the final report.
-3. **Export Reports:** Add an export button allowing institutional users to download PDF copies of the generated investment research sheets.
-
-
+1. **Multi-Agent RAG Search:** Implement a multi-agent system where a Search Agent retrieves current SEC filings, a Web Agent crawls financial news, and a Synthesis Agent compiles the final report.
+2. **Interactive Chart Zooming:** Connect the Recharts indicators to a real-time price tick API for sub-minute trading charts.
+3. **Advanced PDF Export:** Allow users to download styled PDF reports containing customized analysis graphs.
