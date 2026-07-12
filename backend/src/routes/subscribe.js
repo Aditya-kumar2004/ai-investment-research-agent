@@ -1,6 +1,6 @@
 import express from "express";
 import Subscriber from "../models/Subscriber.js";
-import { sendWelcomeEmail } from "../services/emailService.js";
+import { sendWelcomeEmail, sendAdminNotificationEmail } from "../services/emailService.js";
 import { z } from "zod";
 
 const router = express.Router();
@@ -34,9 +34,13 @@ router.post("/subscribe", async (req, res, next) => {
     const newSubscriber = new Subscriber({ email });
     await newSubscriber.save();
 
-    // Trigger welcome email asynchronously (non-blocking so response is instant)
+    // Trigger emails asynchronously (non-blocking so response is instant)
     sendWelcomeEmail(email).catch((emailErr) => {
       console.error("[Email Error] Failed to send welcome email:", emailErr);
+    });
+
+    sendAdminNotificationEmail(email).catch((emailErr) => {
+      console.error("[Email Error] Failed to send admin notification email:", emailErr);
     });
 
     return res.status(200).json({
