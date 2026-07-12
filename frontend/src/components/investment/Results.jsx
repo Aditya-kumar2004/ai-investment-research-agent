@@ -907,6 +907,8 @@ const chartTooltip = {
     fontSize: 12,
     color: "white",
   },
+  itemStyle: { color: "white" },
+  labelStyle: { color: "white" },
   cursor: { stroke: "oklch(0.62 0.20 275 / 0.4)" },
 };
 function RevenueChartCard({ report }) {
@@ -1207,13 +1209,15 @@ function SentimentDonut({ report }) {
   return (
     <Card>
       <SectionTitle icon={<Info className="h-4 w-4" />} title="Market Sentiment" />
-      <div className="h-52">
-        <ResponsiveContainer>
+      <div className="h-52 w-full flex items-center justify-center">
+        <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={data}
-              innerRadius={50}
-              outerRadius={80}
+              cx="50%"
+              cy="50%"
+              innerRadius={45}
+              outerRadius={70}
               paddingAngle={4}
               dataKey="value"
               stroke="none"
