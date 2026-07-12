@@ -374,7 +374,7 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-10 md:grid-cols-6">
           <div className="md:col-span-2">
             <div className="flex items-center gap-3">
-              <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-xl border border-border shadow-[var(--shadow-glow)]">
+              <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full border border-border shadow-[var(--shadow-glow)]">
                 <img
                   src="/logo.png"
                   alt="Vortex Logo"

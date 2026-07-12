@@ -81,8 +81,8 @@ export function Navbar() {
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
         {/* Logo & Brand */}
         <div className="flex items-center gap-3">
-          <div className="relative flex h-9.5 w-9.5 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-card shadow-[0_2px_8px_oklch(0_0_0_/_0.04)]">
-            <img src="/logo.png" alt="Vortex Logo" className="h-5 w-5 object-contain" />
+          <div className="relative flex h-9.5 w-9.5 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-card shadow-[0_2px_8px_oklch(0_0_0_/_0.04)]">
+            <img src="/logo.png" alt="Vortex Logo" className="h-full w-full object-cover" />
             <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 to-transparent opacity-50" />
           </div>
           <div className="flex flex-col">
