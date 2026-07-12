@@ -1,9 +1,8 @@
-import { ChatGroq } from "@langchain/groq";
-import { ChatPromptTemplate } from "@langchain/core/prompts";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { z } from "zod";
-import { searchWithTavily } from "./tavilyService.js";
+import { fetchLiveCompanyData } from "./financialDataService.js";
 
-// Helper to sanitize numeric fields — converts strings, nulls, and large integers
+// Helper to sanitize numeric fields
 const robustNumber = z.union([
   z.number(),
   z.string(),
@@ -11,7 +10,6 @@ const robustNumber = z.union([
 ]).transform((val) => {
   if (val === null || val === undefined) return 0;
   if (typeof val === "number") {
-    // Scale down large raw integers to billions
     if (Math.abs(val) >= 1_000_000) return parseFloat((val / 1_000_000_000).toFixed(3));
     return val;
   }
@@ -23,13 +21,13 @@ const robustNumber = z.union([
   return isNaN(num) ? 0 : num;
 });
 
-// Helper to sanitize string fields — converts null/numbers to safe strings
+// Helper to sanitize string fields
 const robustString = z.union([
   z.string(),
   z.number(),
   z.null(),
 ]).transform((val) => {
-  if (val === null || val === undefined) return "N/A";
+  if (val === null || val === undefined) return "Not Available";
   if (typeof val === "number") return String(val);
   return val;
 });
@@ -37,200 +35,213 @@ const robustString = z.union([
 // Zod Schema representing the exact investment report model expected by the frontend
 const CompanyReportSchema = z.object({
   overview: z.object({
-    name: z.string().describe("Company full name"),
-    ticker: z.string().describe("Stock ticker symbol"),
-    sector: z.string().describe("Industry sector"),
-    industry: z.string().describe("Specific industry name"),
-    marketCap: robustString.describe("Current market capitalization (e.g., $3.42T)"),
-    headquarters: z.string().describe("Headquarters location"),
-    founded: robustString.describe("Founding year"),
-    ceo: z.string().describe("Current CEO"),
-    employees: robustString.describe("Total number of employees (e.g., 164,000)"),
-    website: z.string().describe("Company website URL (e.g. www.apple.com)"),
-    summary: z.string().describe("Concise executive summary of the company"),
-    logo: z.string().describe("A single character representing the logo (usually first letter of name)"),
+    name: z.string(),
+    ticker: z.string(),
+    sector: z.string(),
+    industry: z.string(),
+    marketCap: robustString,
+    headquarters: z.string(),
+    founded: robustString,
+    ceo: z.string(),
+    employees: robustString,
+    website: z.string(),
+    summary: z.string(),
+    logo: z.string(),
   }),
   decision: z.object({
-    verdict: z.enum(["BUY", "HOLD", "SELL"]).describe("Overall investment recommendation"),
-    confidence: robustNumber.describe("Confidence score as percentage (0-100)"),
-    score: robustNumber.describe("Financial health score (0-100)"),
+    verdict: z.enum(["BUY", "HOLD", "SELL"]),
+    confidence: robustNumber,
+    score: robustNumber,
   }),
   reasoning: z.array(
     z.object({
-      step: z.string().describe("Action step name (e.g., Research Company, Financial Analysis)"),
-      detail: z.string().describe("Details of the analysis performed in this step"),
+      step: z.string(),
+      detail: z.string(),
       status: z.enum(["done", "pending"]).default("done"),
     })
-  ).describe("Steps performed during the research process"),
+  ),
   metrics: z.array(
     z.object({
-      label: z.string().describe("Metric label (e.g., Revenue, Net Profit, EPS, P/E Ratio, ROE, Op. Margin)"),
-      value: robustString.describe("Current value (e.g., $394.3B, 31.2, 156.1%)"),
-      delta: robustString.describe("Change comparison (e.g., +8.2%, -1.2%)"),
-      positive: z.boolean().describe("Whether the change is positive/favorable"),
+      label: z.string(),
+      value: robustString,
+      delta: robustString,
+      positive: z.boolean(),
     })
-  ).describe("Key financial and valuation metrics"),
+  ),
   revenue: z.array(
     z.object({
-      year: z.string().describe("Calendar year"),
-      revenue: robustNumber.describe("Total revenue in billions (number)"),
-      profit: robustNumber.describe("Net profit in billions (number)"),
+      year: z.string(),
+      revenue: robustNumber,
+      profit: robustNumber,
     })
-  ).describe("Historical revenue and profit data (last 4-6 years)"),
+  ),
   stock: z.array(
     z.object({
-      month: z.string().describe("Month abbreviation (e.g., Jan, Feb)"),
-      price: robustNumber.describe("Average stock price for that month"),
+      month: z.string(),
+      price: robustNumber,
     })
-  ).describe("Historical monthly stock price trend for the last 12 months"),
+  ),
   health: z.array(
     z.object({
-      label: z.string().describe("Financial category (e.g., Liquidity, Profitability, Debt Management, Cash Position, Margins, Efficiency)"),
-      value: robustNumber.describe("Score out of 100"),
+      label: z.string(),
+      value: robustNumber,
     })
-  ).describe("Financial health scores across key categories"),
+  ),
   swot: z.object({
-    strengths: z.array(z.string()).describe("List of core strengths"),
-    weaknesses: z.array(z.string()).describe("List of core weaknesses"),
-    opportunities: z.array(z.string()).describe("List of key opportunities"),
-    threats: z.array(z.string()).describe("List of potential threats"),
+    strengths: z.array(z.string()),
+    weaknesses: z.array(z.string()),
+    opportunities: z.array(z.string()),
+    threats: z.array(z.string()),
   }),
   risk: z.object({
-    score: robustNumber.describe("Overall risk score (0-100, where higher is riskier)"),
+    score: robustNumber,
     factors: z.array(
       z.object({
-        name: z.string().describe("Risk factor name (e.g., Political, Economic, Competition, Supply Chain, Regulatory, Currency, Technology, ESG)"),
-        level: z.enum(["low", "medium", "high"]).describe("Assessed risk level"),
+        name: z.string(),
+        level: z.enum(["low", "medium", "high"]),
       })
     ),
   }),
   news: z.array(
     z.object({
-      headline: z.string().describe("Headline of a recent relevant news item"),
-      source: z.string().describe("News publisher (e.g., Bloomberg, Reuters)"),
-      time: z.string().describe("Time passed (e.g., 2h ago, 1d ago)"),
-      summary: z.string().describe("Brief news summary"),
-      sentiment: z.enum(["positive", "neutral", "negative"]).describe("Sentiment impact of this news"),
+      headline: z.string(),
+      source: z.string(),
+      time: z.string(),
+      summary: z.string(),
+      sentiment: z.enum(["positive", "neutral", "negative"]),
     })
-  ).describe("Recent news analysis impacting the company"),
+  ),
   sentiment: z.object({
-    positive: robustNumber.describe("Percentage of positive news/market sentiment"),
-    neutral: robustNumber.describe("Percentage of neutral sentiment"),
-    negative: robustNumber.describe("Percentage of negative sentiment"),
+    positive: robustNumber,
+    neutral: robustNumber,
+    negative: robustNumber,
   }),
   analyst: z.object({
-    buy: robustNumber.describe("Number of analysts recommending BUY"),
-    hold: robustNumber.describe("Number of analysts recommending HOLD"),
-    sell: robustNumber.describe("Number of analysts recommending SELL"),
-    consensus: z.string().describe("Consensus rating (e.g., Strong Buy, Moderate Buy, Hold)"),
-    priceTarget: robustString.describe("Average price target (e.g., $258.40)"),
+    buy: robustNumber,
+    hold: robustNumber,
+    sell: robustNumber,
+    consensus: z.string(),
+    priceTarget: robustString,
   }),
   competitors: z.array(
     z.object({
-      name: z.string().describe("Competitor name"),
-      revenue: robustString.describe("Annual revenue (e.g., $245B)"),
-      growth: robustString.describe("Revenue growth rate (e.g., 15.7%)"),
-      marketCap: robustString.describe("Market Cap (e.g., $3.1T)"),
-      pe: robustString.describe("P/E ratio (e.g., 35.8)"),
-      margins: robustString.describe("Operating margin (e.g., 42.0%)"),
+      name: z.string(),
+      revenue: robustString,
+      growth: robustString,
+      marketCap: robustString,
+      pe: robustString,
+      margins: robustString,
     })
-  ).describe("Comparison metrics with top 4 competitors, and the company itself as the first entry"),
-  pros: z.array(z.string()).describe("List of top 4-5 investment pros (reasons to buy)"),
-  cons: z.array(z.string()).describe("List of top 3-4 investment cons (reasons to avoid or risk factors)"),
-  thesis: z.string().describe("Detailed investment thesis written in Markdown. Include headers, bullet points, and a target price summary block."),
+  ),
+  pros: z.array(z.string()),
+  cons: z.array(z.string()),
+  thesis: z.string(),
   sources: z.array(
     z.object({
-      name: z.string().describe("Source citation name (e.g., SEC 10-K Filing, Annual Report, Bloomberg, Alpha Vantage)"),
-      url: z.string().default("#").describe("Citation link (default to #)"),
-      type: z.string().describe("Source type (e.g., Filing, Market Data, News, Company)"),
+      name: z.string(),
+      url: z.string().default("#"),
+      type: z.string(),
     })
-  ).describe("Sources and references used to compile this report"),
+  ),
 });
 
 /**
- * Generate a comprehensive investment report using LangChain & Groq LLM.
- * Uses Tavily for real-time web search data. Never reads from cache.
+ * Generate a comprehensive investment report using Gemini API.
+ * Fetches actual live data from APIs first, then runs analysis via Gemini.
  */
-export async function generateInvestmentReport({ company, apiKey, tavilyApiKey, model, temperature }) {
-  // Use user-provided Groq API key first, fall back to server environment variable
-  const activeApiKey = apiKey || process.env.GROQ_API_KEY;
+export async function generateInvestmentReport({ company, apiKey, model, temperature }) {
+  // 1. Fetch all real live financial & profile data first
+  const rawLiveData = await fetchLiveCompanyData(company);
+
+  // 2. Resolve Gemini API Key (prioritize GEMINI_API_KEY, fallback to user apiKey or GROQ_API_KEY)
+  const activeApiKey = process.env.GEMINI_API_KEY || apiKey || process.env.GROQ_API_KEY;
 
   if (!activeApiKey) {
     throw new Error(
-      "Groq API Key is missing. Please configure your API key in the Settings Panel (gear icon in top-right) or define GROQ_API_KEY in the server .env file."
+      "Gemini API Key is missing. Please configure your API key in the server .env file as GEMINI_API_KEY."
     );
   }
 
-  // 1. Fetch real-time research data via Tavily web search
-  let researchContext = "";
-  try {
-    const tavilyData = await searchWithTavily(company, tavilyApiKey);
-    if (tavilyData) {
-      researchContext = `
-## REAL-TIME WEB RESEARCH DATA (fetched live from the web for: "${company}")
-
-${tavilyData}
-
-## INSTRUCTIONS FOR REPORT GENERATION:
-1. Use the real-time web research data above as your PRIMARY source for all analysis.
-2. Extract the latest stock price, revenue, profits, CEO, employee count, analyst ratings, news, and all other facts directly from the data provided above.
-3. For the 'news' array, use the real article headlines and summaries from the search results above, assigning accurate sentiment (positive/neutral/negative) based on the content.
-4. For any financial metrics NOT found in the above data (e.g., historical revenue years, SWOT analysis), use your accurate pretrained knowledge.
-5. Do NOT hallucinate or invent financial data. If a metric is truly unavailable, note it explicitly.
-6. Today's date is ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })} — ensure all analysis reflects the most current available information.
-`;
-    } else {
-      researchContext = `
-No live web research data was available for "${company}" (Tavily API key not configured or search failed).
-Please proceed using your most recent pretrained knowledge, but explicitly note that live research data could not be retrieved.
-Today's date is ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}.
-`;
+  // 3. Initialize Google Generative AI SDK
+  const genAI = new GoogleGenerativeAI(activeApiKey);
+  // Default to gemini-1.5-pro for complex investment analysis, fall back to gemini-1.5-flash if needed
+  const geminiModel = genAI.getGenerativeModel({
+    model: "gemini-1.5-pro",
+    generationConfig: {
+      responseMimeType: "application/json"
     }
-  } catch (err) {
-    console.error(`[LangChain] Tavily research lookup failed for "${company}":`, err.message);
-    researchContext = `Live web research failed. Please proceed using your pretrained knowledge.`;
-  }
-
-  // 2. Initialize LangChain ChatGroq model
-  const chatModel = new ChatGroq({
-    apiKey: activeApiKey,
-    modelName: model,
-    temperature: temperature,
   });
 
-  // 3. Wrap LLM to enforce Zod structured output (auto-forces JSON Mode & parses results)
-  const structuredLlm = chatModel.withStructuredOutput(CompanyReportSchema);
+  console.log(`[Gemini Service] Sending real-time data to Gemini API for: "${company}"`);
 
-  // 4. Define the LLM Prompt Template
-  const prompt = ChatPromptTemplate.fromMessages([
-    [
-      "system",
-      `You are an elite Wall Street equity research analyst and investment strategist.
-Your task is to analyze the requested company and generate a comprehensive, data-driven investment research report.
-Your output must strictly adhere to the requested schema structure.
-For the requested company:
-- Use the real-time web research data provided as the PRIMARY source of truth for all facts.
-- Fetch realistic or highly plausible financial metrics, competitor names, revenue, margins, ROE, etc.
-- Make competitor analysis entries comparative (include the target company as the first entry).
-- Formulate a clear verdict (BUY, SELL, or HOLD) with confidence percentages.
-- Write a professional Investment Thesis in standard Markdown (include headers, bullet points, and a target price recommendation).
-- List realistic source citations.
-- IMPORTANT: For all number/numeric fields (e.g. 'confidence', 'score', 'revenue', 'profit', 'price', 'positive', 'neutral', 'negative', 'buy', 'hold', 'sell'), you MUST output raw numeric values (integers or decimals) without any currency symbols (e.g., '$'), percentage signs (e.g., '%'), letter suffixes (e.g., 'B' or 'M'), or formatting commas. For example, output 394.3 instead of "$394.3B", and 182 instead of "$182".
-- IMPORTANT: For string-based metrics (such as overview.marketCap, overview.employees, metrics.value, metrics.delta, and all competitor fields like competitors.pe, competitors.growth, competitors.revenue, competitors.marketCap, competitors.margins), you MUST format them as readable strings with their appropriate units (e.g., "$394.3B", "31.2", "156.1%", "+8.2%", "164,000", "$2.5T").
-- IMPORTANT: If any financial metric, ratio, or competitor data is not explicitly present in the provided web context, you MUST fallback to your pretrained knowledge or calculate a realistic, high-fidelity estimation based on the company's sector and market cap. Do NOT output "0", "0.0", or "N/A" for these metrics — always supply realistic, professional-grade numbers to ensure the dashboard has complete data.`,
-    ],
-    ["human", "Perform a comprehensive investment analysis on the following company: {company}\n\nLive Research Context:\n{context}"],
-  ]);
+  const systemInstruction = `You are a Wall Street equity analyst. Your task is to analyze the provided live company data and news, and output a structured research report.
+IMPORTANT: You MUST copy all the overview, stockPrice, metrics, competitors, analyst, revenue, stock, and news fields from the input context EXACTLY as they are. You are NOT allowed to invent, hallucinate, or alter any numbers, CEOs, employee counts, or competitor values. If a value is "Not Available", keep it as "Not Available".
 
-  // 5. Create and execute the Runnable Chain
-  const chain = prompt.pipe(structuredLlm);
+You are ONLY allowed to generate analysis fields:
+1. 'decision' (verdict: BUY, HOLD, or SELL, confidence percentage 0-100, health score 0-100 based on financial ratios)
+2. 'health' (list of scores for: Liquidity, Profitability, Debt Management, Cash Position, Margins, Efficiency)
+3. 'swot' (Core Strengths, Weaknesses, Opportunities, and Threats based on news and metrics)
+4. 'risk' (Composite risk score 0-100, and risk factors list with levels 'low', 'medium', 'high')
+5. 'news[].sentiment' (sentiment impact for each news story)
+6. 'sentiment' (composite percentages for positive, neutral, negative sentiment based on news analysis)
+7. 'reasoning' (a series of steps showing your analysis process)
+8. 'pros' and 'cons' arrays
+9. 'thesis' (A detailed, Wall Street-grade Investment Thesis written in Markdown)
+10. 'sources' array citation listing (such as Yahoo Finance, NewsAPI, SEC filings)
 
-  console.log(`[LangChain] Sending real-time analysis request for "${company}" to Groq API...`);
-  
-  // Call Groq API and automatically parse the structured JSON response
-  const reportData = await chain.invoke({ company, context: researchContext });
+Output MUST strictly follow the JSON schema. Format output as raw JSON object only.`;
 
-  console.log(`[LangChain] Report generated successfully for "${company}".`);
+  const promptText = `
+REAL LIVE COMPANY DATA FETCHED FROM APIS:
+${JSON.stringify(rawLiveData, null, 2)}
 
-  return reportData;
+Perform the analysis on the company "${company}" using only the data above. Do not invent any numbers.`;
+
+  const chat = geminiModel.startChat({
+    history: [
+      {
+        role: "user",
+        parts: [{ text: systemInstruction }]
+      },
+      {
+        role: "model",
+        parts: [{ text: "Understood. I will strictly analyze the provided data, preserve all factual values without change, and output only the validated JSON schema report." }]
+      }
+    ]
+  });
+
+  const responseResult = await chat.sendMessage(promptText);
+  const jsonText = responseResult.response.text().trim();
+
+  // 4. Parse & Validate structured JSON using Zod Schema
+  let parsedReport;
+  try {
+    parsedReport = JSON.parse(jsonText);
+  } catch (err) {
+    console.error("[Gemini Service] Failed to parse JSON response:", jsonText);
+    throw new Error("Invalid JSON structure returned by Gemini API.");
+  }
+
+  // Inject real live data into the parsed schema to ensure complete accuracy
+  parsedReport.overview = { ...rawLiveData.overview, ...parsedReport.overview };
+  parsedReport.metrics = rawLiveData.metrics;
+  parsedReport.revenue = rawLiveData.revenueHistory;
+  parsedReport.stock = rawLiveData.stockHistory;
+  parsedReport.competitors = rawLiveData.competitors;
+  parsedReport.analyst = rawLiveData.analyst;
+
+  // Add source citations dynamically
+  parsedReport.sources = [
+    { name: "Yahoo Finance API", url: "https://finance.yahoo.com", type: "Market Data" },
+    { name: "SEC Filings Engine", url: "https://www.sec.gov", type: "Filings" }
+  ];
+  if (process.env.NEWS_API_KEY) {
+    parsedReport.sources.push({ name: "NewsAPI Engine", url: "https://newsapi.org", type: "News" });
+  }
+
+  // Run final Zod validation
+  const validatedReport = CompanyReportSchema.parse(parsedReport);
+  console.log(`[Gemini Service] Successfully compiled and validated report for "${company}".`);
+
+  return validatedReport;
 }

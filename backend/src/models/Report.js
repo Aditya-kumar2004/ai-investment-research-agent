@@ -24,8 +24,8 @@ const reportSchema = new mongoose.Schema(
     createdAt: {
       type: Date,
       default: Date.now,
-      // Automatically delete the cached document after 7 days (604,800 seconds)
-      expires: 604800,
+      // Automatically delete the cached document after 5 minutes (300 seconds)
+      expires: 300,
     },
   },
   {

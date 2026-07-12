@@ -61,15 +61,20 @@ export async function analyzeCompanyController(req, res, next) {
         console.error("[Cache Lookup Error] Failed to read from MongoDB:", dbError.message);
       }
     } else {
-      // Offline fallback: check in-memory cache
+      // Offline fallback: check in-memory cache with 5-minute TTL
       if (inMemoryCache.has(cacheKey)) {
-        console.log(`[Cache Hit] Serving cached report from Memory for: "${normalizedCompany}"`);
-        const cachedData = inMemoryCache.get(cacheKey);
-        return res.status(200).json({
-          success: true,
-          source: "cache_memory",
-          data: cachedData,
-        });
+        const cached = inMemoryCache.get(cacheKey);
+        if (Date.now() < cached.expiry) {
+          console.log(`[Cache Hit] Serving cached report from Memory for: "${normalizedCompany}"`);
+          return res.status(200).json({
+            success: true,
+            source: "cache_memory",
+            data: cached.data,
+          });
+        } else {
+          inMemoryCache.delete(cacheKey);
+          console.log(`[Cache Evict] Evicted expired memory cache key for: "${normalizedCompany}"`);
+        }
       }
     }
 
@@ -98,8 +103,11 @@ export async function analyzeCompanyController(req, res, next) {
         console.error("[Cache Save Error] Failed to write to MongoDB:", dbSaveError.message);
       }
     } else {
-      // Save in memory fallback cache
-      inMemoryCache.set(cacheKey, generatedReport);
+      // Save in memory fallback cache with 5-minute TTL (300,000 ms)
+      inMemoryCache.set(cacheKey, {
+        data: generatedReport,
+        expiry: Date.now() + 300000
+      });
       console.log(`[Cache Save] Saved report for "${normalizedCompany}" in Memory.`);
     }
 
