@@ -17,3 +17,4 @@ Starting log...
 <!-- milestone: error fallback defined -->
 <!-- milestone: glassmorphic design systems active -->
 <!-- milestone: keyboard navigation validated -->
+<!-- milestone: final walkthrough generated -->
